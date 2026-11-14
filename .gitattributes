@@ -3,7 +3,10 @@
 *.bat text eol=crlf
 *.ps1 text eol=crlf
 
-# Trained model and processed Kepler data: binary, never diff/merge.
+# Trained model and processed Kepler data: byte-exact (verified by backend/ASSETS.sha256),
+# so never convert line endings, even for the JSON config.
+backend/models/** binary
+backend/data/** binary
 *.keras binary
 *.npz binary
 *.h5 binary
