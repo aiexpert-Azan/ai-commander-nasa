@@ -1,7 +1,9 @@
+import { MotionConfig } from 'framer-motion'
 import { AlertTriangle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api, API_URL, type Health } from './api/client'
 import { Starfield } from './components/Starfield'
+import { TutorialProvider } from './components/Tutorial'
 import { TopBar } from './components/ui'
 import { GameProvider, useGame } from './game/store'
 import { Briefing } from './screens/Briefing'
@@ -28,6 +30,9 @@ function Game() {
     return () => { alive = false }
   }, [dispatch])
 
+  // New screen starts at the top (important on phones, where the previous screen may have been scrolled).
+  useEffect(() => { window.scrollTo(0, 0) }, [state.screen])
+
   const screens = {
     welcome: <Welcome />, briefing: <Briefing />, design: <DesignScreen />, readiness: <Readiness />,
     launch: <LaunchScreen />, explore: <Exploration />, results: <Results />,
@@ -38,13 +43,13 @@ function Game() {
       <Starfield />
       <TopBar />
       {(offline || health?.star_data_error || (health && !health.model_loaded)) && (
-        <div className="fixed inset-x-0 top-14 z-30 flex justify-center px-4">
-          <div className="mt-2 flex max-w-2xl items-start gap-2 rounded-xl border border-amber-400/30 bg-amber-950/80 px-3 py-2 text-xs text-amber-100 backdrop-blur">
+        <div className="fixed inset-x-0 top-[calc(3.5rem+env(safe-area-inset-top))] z-30 flex justify-center px-3" role="status">
+          <div className="mt-2 flex max-w-2xl items-start gap-2 rounded-xl border border-amber-400/30 bg-amber-950/90 px-3 py-2 text-xs text-amber-100 backdrop-blur">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
             <span>
-              {offline ? `Mission server offline (${API_URL || '/api proxy'}). Run start-backend.bat — retrying automatically.`
+              {offline ? `Can't reach mission control (${API_URL || '/api proxy'}). Retrying automatically…`
                 : health?.star_data_error ? `Setup error: ${health.star_data_error}. No substitute signals will be shown.`
-                  : 'AI Scientist offline (model not loaded). You can still play using your own analysis.'}
+                  : 'The AI Scientist is offline right now. You can still play using your own judgement.'}
             </span>
           </div>
         </div>
@@ -56,5 +61,9 @@ function Game() {
 }
 
 export default function App() {
-  return <GameProvider><Game /></GameProvider>
+  return (
+    <MotionConfig reducedMotion="user">
+      <GameProvider><TutorialProvider><Game /></TutorialProvider></GameProvider>
+    </MotionConfig>
+  )
 }

@@ -1,9 +1,12 @@
 // Game state: a single reducer persisted to localStorage.
 import { createContext, useContext, useEffect, useReducer, type Dispatch, type ReactNode } from 'react'
-import type { Catalog, DecisionResult, Design, LaunchResult, Operations, ScoreResult, StarSummary } from '../api/client'
+import type { Catalog, Category, DecisionResult, Design, LaunchResult, Operations, ScoreResult, StarSummary } from '../api/client'
 import { setSoundEnabled } from '../audio/sound'
 
 export type Screen = 'welcome' | 'briefing' | 'design' | 'readiness' | 'launch' | 'explore' | 'results'
+/** Guided Explorer = hints + highlighted next steps; Mission Commander = independent play. Same engine and scoring. */
+export type PlayMode = 'guided' | 'commander'
+export type DesignSlot = Category | 'ground_station'
 
 export interface DecisionRecord extends DecisionResult {
   points: number
@@ -35,6 +38,12 @@ export interface GameState {
   score: ScoreResult | null
   sound: boolean
   missionsFlown: number
+  mode: PlayMode | null
+  tutorialSeen: boolean
+  /** Design tab to open next time the design screen mounts (e.g. from a readiness "Fix it" button). */
+  designFocus: DesignSlot | null
+  /** Transit explainer dismissed (shown expanded by default for guided players until then). */
+  transitIntroSeen: boolean
 }
 
 const KEY = 'ai-commander-save-v1'
@@ -60,6 +69,10 @@ export const initialState: GameState = {
   score: null,
   sound: true,
   missionsFlown: 0,
+  mode: null,
+  tutorialSeen: false,
+  designFocus: null,
+  transitIntroSeen: false,
 }
 
 export type Action =
@@ -77,6 +90,10 @@ export type Action =
   | { type: 'newMission'; level: number }
   | { type: 'toggleSound' }
   | { type: 'reset' }
+  | { type: 'setMode'; mode: PlayMode }
+  | { type: 'tutorialSeen' }
+  | { type: 'focusDesign'; slot: DesignSlot | null }
+  | { type: 'transitIntroSeen' }
 
 function reducer(s: GameState, a: Action): GameState {
   switch (a.type) {
@@ -144,7 +161,16 @@ function reducer(s: GameState, a: Action): GameState {
     case 'toggleSound':
       return { ...s, sound: !s.sound }
     case 'reset':
-      return { ...initialState, seed: newSeed(), sound: s.sound, unlocked: s.unlocked, catalog: s.catalog }
+      return { ...initialState, seed: newSeed(), sound: s.sound, unlocked: s.unlocked, catalog: s.catalog,
+        mode: s.mode, tutorialSeen: s.tutorialSeen, transitIntroSeen: s.transitIntroSeen }
+    case 'setMode':
+      return { ...s, mode: a.mode }
+    case 'tutorialSeen':
+      return { ...s, tutorialSeen: true }
+    case 'focusDesign':
+      return { ...s, designFocus: a.slot, screen: a.slot ? 'design' : s.screen }
+    case 'transitIntroSeen':
+      return { ...s, transitIntroSeen: true }
   }
 }
 

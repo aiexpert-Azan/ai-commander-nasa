@@ -10,14 +10,30 @@
   --color-space-600: #1e2f5c;
 }
 
-html, body, #root { height: 100%; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body, #root { min-height: 100%; }
 body {
   margin: 0;
   background: radial-gradient(ellipse at 20% 0%, #0d1838 0%, #03050d 55%) fixed, #03050d;
   color: #e2e8f0;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
 }
+#root { overflow-x: clip; }
+
+/* Horizontal page gutter that also clears notches/rounded corners in landscape. */
+.safe-x {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+@media (min-width: 640px) {
+  .safe-x { padding-left: max(1.5rem, env(safe-area-inset-left)); padding-right: max(1.5rem, env(safe-area-inset-right)); }
+}
+
+button { touch-action: manipulation; }
+:focus-visible { outline: 2px solid #67e8f9; outline-offset: 2px; border-radius: 0.5rem; }
 
 .glass {
   background: linear-gradient(180deg, rgba(20, 32, 66, 0.55), rgba(7, 11, 26, 0.7));
@@ -26,14 +42,29 @@ body {
   backdrop-filter: blur(10px);
 }
 .glow-text { text-shadow: 0 0 18px rgba(34, 211, 238, 0.55); }
-.hud-label { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: #7dd3fc; opacity: 0.8; }
+.hud-label { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: #7dd3fc; opacity: 0.9; }
 
 @keyframes twinkle { 0%, 100% { opacity: 0.25 } 50% { opacity: 1 } }
 @keyframes drift { from { transform: translateY(0) } to { transform: translateY(-50%) } }
 @keyframes pulse-ring { 0% { transform: scale(0.6); opacity: 0.9 } 100% { transform: scale(2.2); opacity: 0 } }
 @keyframes scanline { from { transform: translateY(-100%) } to { transform: translateY(100%) } }
+@keyframes attention { 0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.55) } 50% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0) } }
 .animate-pulse-ring { animation: pulse-ring 1.8s ease-out infinite; }
+/* Guided Explorer: highlights the recommended next action. */
+.next-action { animation: attention 1.8s ease-in-out infinite; }
 
 .recharts-brush-texts { fill: #94a3b8; }
+.recharts-wrapper { touch-action: pan-y; }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #1e2f5c; border-radius: 4px; }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
