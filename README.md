@@ -20,7 +20,7 @@ It is often right, but not always.
 - **Systems-engineering readiness review.** Up to 9 pass/warn/fail checks cover the launch, space, ground and science segments. Launch stays blocked until every critical check passes.
 - **Seeded launch simulation.** A countdown, liftoff and deployment phases each roll against your mission risk. The same design and seed always give the same outcome.
 - **Real Kepler science.** You see an interactive, zoomable phase-folded light curve for 150 held-out Kepler targets, checked against the Kepler DR25 KOI catalog on the server.
-- **Real CNN inference.** A 1D convolutional network runs live through FastAPI. Its score is clearly labelled experimental and never shown as a probability.
+- **Real CNN inference.** A 1D convolutional network runs live through FastAPI (about 13 ms per prediction). Its score is clearly labelled experimental and never shown as a probability.
 - **Three levels:** Cadet Explorer, Deep Space Analyst and Elite Mission Commander, with ranks from Cadet to Elite Commander.
 - **Also included:** synthesized sound effects, progress saved in the browser, and a responsive layout that works on phones.
 
@@ -113,7 +113,7 @@ The FastAPI app is `app` in `backend/app/main.py`, so the ASGI target is **`app.
 cd backend
 python3.12 -m venv .venv
 # Windows: .venv\Scripts\activate    macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt     # runtime + test tools
 python scripts/verify_assets.py
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000      # or: uvicorn main:app --reload
 
@@ -143,13 +143,84 @@ npm run dev
 | `AIC_CORS_ORIGINS` | Allowed browser origins | `http://localhost:5173,http://127.0.0.1:5173` |
 | `AIC_MODEL_PATH`, `AIC_MODEL_CONFIG`, `AIC_CHECKPOINT`, `AIC_SPLIT` | Override model and data paths | files in `backend/models`, `backend/data` |
 | `AIC_DISABLE_MODEL=1` | Simulate the AI Scientist being offline | off |
+| `AIC_CORS_ORIGIN_REGEX` | Extra allowed origins as a regex (e.g. Vercel previews) | unset |
+| `AIC_CORS_ALLOW_LOCALHOST` | Allow any `http://localhost:<port>` origin; set `0` in production | `1` |
+| `AIC_TF_THREADS` | Cap TensorFlow CPU threads (0 = TensorFlow default) | `0` |
+| `HOST` / `PORT` | Bind address and port for `python main.py` | `127.0.0.1` (`0.0.0.0` on Railway) / `8000` |
 
 No API keys, accounts or database are needed.
+
+## Deployment: Vercel (frontend) + Railway (backend)
+
+```
+Browser ──► Vercel (static React build)            Railway (FastAPI + TensorFlow CNN)
+   │          VITE_API_URL baked in at build  ──►     python main.py  →  0.0.0.0:$PORT
+   └──────────── fetch https://<railway>/api/* ──►    CORS allows only your Vercel domain(s)
+```
+
+The frontend calls the Railway URL directly. Vercel rewrites can't read environment variables, so proxying
+through Vercel would mean hard-coding the backend URL in the repo. No secrets are involved:
+the API needs no keys, and `VITE_API_URL` is a public URL.
+
+### 1. Backend on Railway
+1. **New Project → Deploy from GitHub repo** and pick this repository.
+2. Open the service's **Settings**:
+   - **Root Directory:** `/backend`
+   - **Config-as-code file path:** `/backend/railway.json`. Railway does not apply the root directory to this path.
+     The file sets the start command `python main.py`, the health check `/api/health` with a 300 s timeout for the
+     TensorFlow start-up, a restart policy, and watch paths so frontend-only commits don't redeploy the backend.
+   - Python **3.12** comes from `backend/.python-version`. Dependencies come from `backend/requirements.txt`.
+     On Linux that installs **`tensorflow-cpu`** (259 MB wheel, versus 620 MB for `tensorflow`). Test tools live in `requirements-dev.txt` and are not installed.
+3. **Variables** (service → Variables):
+
+   | Variable | Value |
+   |---|---|
+   | `AIC_CORS_ORIGINS` | `https://<your-app>.vercel.app` (comma-separate several; add a custom domain if you have one) |
+   | `AIC_CORS_ORIGIN_REGEX` | *(optional, for preview deploys)* `https://<your-app>(-[a-z0-9-]+)?\.vercel\.app` |
+   | `AIC_CORS_ALLOW_LOCALHOST` | `0` |
+   | `AIC_TF_THREADS` | `2` (caps TensorFlow threads on small containers) |
+   | `TF_CPP_MIN_LOG_LEVEL` | `2` (quieter logs) |
+
+   Railway sets `PORT` and `RAILWAY_ENVIRONMENT` itself. The launcher then binds `0.0.0.0:$PORT` with **1 worker**.
+4. **Networking → Generate Domain**. You get a URL like `https://ai-commander-api.up.railway.app`.
+5. **Check it:** `https://<railway-domain>/api/health` must show `"status": "ok"`, `"stars_loaded": 150` and `"model_loaded": true`.
+
+**Memory:** measured locally, the backend uses about 260–290 MB resident with the model loaded, staying flat under load,
+plus TensorFlow's reserved address space. Give the service **at least 1 GB RAM**. Keep **one worker**, because each extra
+worker loads its own copy of TensorFlow. One worker easily handles this game's traffic:
+CNN inference takes about 13 ms per request.
+
+The model and the Kepler data (about 2.5 MB) are committed to Git, so Railway gets them with the source. No download step or volume is needed.
+
+### 2. Frontend on Vercel
+1. **Add New → Project** and import the same repository.
+2. **Root Directory:** `frontend`. Vercel then uses `frontend/vercel.json` (Vite framework, `npm ci`, `npm run build`,
+   output in `dist`, long-term caching for hashed assets, basic security headers).
+3. **Environment Variables:** `VITE_API_URL` = `https://<railway-domain>` (no trailing `/api`), for Production and Preview.
+   The build **fails on purpose** if this variable is missing, so a broken site can't go live.
+4. Deploy, then put the Vercel URL into Railway's `AIC_CORS_ORIGINS` (Railway redeploys automatically).
+
+### 3. Verify the live deployment
+1. Open `https://<railway-domain>/api/health`: you should see `model_loaded: true` and `stars_loaded: 150`.
+2. Open the Vercel URL. There should be no "Mission server offline" banner.
+3. Play through: design → launch → observe a star → **Consult AI** (this calls the real CNN) → decide → results.
+4. If the AI or star data fails, open the browser dev tools. A CORS error means `AIC_CORS_ORIGINS` doesn't exactly match the Vercel origin.
+
+### Production configuration reference
+
+| Where | File | Purpose |
+|---|---|---|
+| Railway | `backend/railway.json` | Start command, health check, restart policy, watch paths |
+| Railway | `backend/.python-version` | Python 3.12 |
+| Railway | `backend/requirements.txt` | Runtime dependencies (CPU TensorFlow on Linux) |
+| Railway | `backend/main.py` | Launcher: `$PORT`, `0.0.0.0` on Railway, 1 worker, proxy headers |
+| Vercel | `frontend/vercel.json` | Build settings, caching and security headers |
+| Vercel | `frontend/vite.config.ts` | Fails Vercel builds that have no `VITE_API_URL` |
 
 ## Tests
 ```bat
 cd backend
-.venv\Scripts\python -m pytest -q          :: 15 API + engine tests (data validation, label hiding, inference, readiness, scoring, level feasibility)
+.venv\Scripts\python -m pytest -q          :: 18 tests: API, engine, data validation, label hiding, inference, readiness, scoring, level feasibility, CORS, launcher
 .venv\Scripts\python scripts\verify_assets.py
 cd ..\frontend
 npm run build                               :: TypeScript type-check + production build
@@ -170,15 +241,18 @@ ai-commander-nasa/
 │  ├─ scripts/            find_free_port.py, stop_backend.ps1, verify_assets.py
 │  ├─ tests/test_api.py
 │  ├─ ASSETS.sha256       Checksums of the model and data files
-│  ├─ main.py             Shim so `uvicorn main:app` works
-│  └─ requirements.txt
+│  ├─ main.py             `uvicorn main:app` shim + production launcher (`python main.py`)
+│  ├─ railway.json        Railway config-as-code
+│  ├─ .python-version     Python 3.12
+│  ├─ requirements.txt    Runtime dependencies
+│  └─ requirements-dev.txt  + test tools
 ├─ frontend/
 │  ├─ src/api/            Typed API client
 │  ├─ src/game/           Game state (reducer + localStorage), live evaluation hook
 │  ├─ src/audio/          Web Audio synthesized sound effects
 │  ├─ src/components/     UI kit, starfield, spacecraft SVG, light-curve chart, star grid
 │  ├─ src/screens/        Welcome, Briefing, Design, Readiness, Launch, Exploration, Results
-│  └─ package.json, vite.config.ts
+│  └─ package.json, vite.config.ts, vercel.json
 ├─ docs/                  gameplay.md, model_integration.md, nasa_resources.md
 ├─ setup.bat  start-backend.bat  start-frontend.bat  stop-backend.bat
 └─ README.md

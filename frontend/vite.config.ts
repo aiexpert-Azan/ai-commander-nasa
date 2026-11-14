@@ -19,6 +19,13 @@ const target = backendTarget()
 console.log(`[ai-commander] /api -> ${target}`)
 const proxy = { '/api': { target, changeOrigin: true } }
 
+// On Vercel the frontend must know the Railway backend URL at build time; fail loudly instead of
+// shipping a bundle that calls a non-existent same-origin /api.
+if (process.env.VERCEL && !process.env.VITE_API_URL) {
+  throw new Error('VITE_API_URL is not set. In Vercel: Project Settings -> Environment Variables -> ' +
+    'VITE_API_URL=https://<your-backend>.up.railway.app, then redeploy.')
+}
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: { port: 5173, host: '127.0.0.1', proxy },

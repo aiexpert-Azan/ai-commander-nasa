@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import engine
-from .config import CORS_ORIGINS, SIGNAL_LENGTH
+from .config import CORS_ALLOW_LOCALHOST, CORS_ORIGIN_REGEX, CORS_ORIGINS, SIGNAL_LENGTH
 from .data_store import LABEL_NAMES, PROVENANCE, store
 from .inference import ai
 
@@ -25,8 +25,11 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="AI Commander - The Exoplanet Hunter API", version="1.0.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
-                   allow_methods=["*"], allow_headers=["*"])
+_origin_patterns = ([r"http://(localhost|127\.0\.0\.1)(:\d+)?"] if CORS_ALLOW_LOCALHOST else []) + (
+    [CORS_ORIGIN_REGEX] if CORS_ORIGIN_REGEX else [])
+app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS,
+                   allow_origin_regex="|".join(f"(?:{p})" for p in _origin_patterns) or None,
+                   allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type"], max_age=3600)
 
 
 # ---------------------------------------------------------------- schemas

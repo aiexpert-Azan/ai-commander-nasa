@@ -28,7 +28,10 @@ timestamps or sky coordinates, so the target grid is explicitly labelled *styliz
 1. The model and config are loaded once at startup, followed by one warm-up prediction.
 2. Input → `float32`, length must be 128 and all values finite (otherwise HTTP 422).
 3. `x / scale`, then clip to ±5 (`AIC_CLIP`).
-4. Reshape to `(1,128,1)`, predict, compare with `threshold`.
+4. Reshape to `(1,128,1)` and run the model in inference mode (`model(x, training=False)`), then compare with `threshold`.
+   Calling the model directly avoids the per-call input pipeline that `Model.predict()` builds. On all 150 test stars
+   the scores match `predict()` to within 1.2e-7 with identical classes, and the call is about 5× faster (~13 ms vs ~67 ms).
+   `AIC_TF_THREADS` can cap TensorFlow's CPU threads on small servers.
 5. The response contains `score`, `predicted_class`, `lean_strength`, an `explanation` and a `disclaimer`.
 
 **Checking the preprocessing.** We ran the 150 held-out test stars through this preprocessing pipeline. It

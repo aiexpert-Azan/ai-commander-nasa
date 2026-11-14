@@ -1,0 +1,4 @@
+# Local development and tests (not installed in production).
+-r requirements.txt
+httpx==0.28.1
+pytest==9.2.0

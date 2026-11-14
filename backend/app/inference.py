@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 
-from .config import CLIP_LIMIT, DISABLE_MODEL, MODEL_CONFIG_PATH, MODEL_PATH, SIGNAL_LENGTH
+from .config import CLIP_LIMIT, DISABLE_MODEL, MODEL_CONFIG_PATH, MODEL_PATH, SIGNAL_LENGTH, TF_THREADS
 
 log = logging.getLogger("ai_commander.ai")
 
@@ -44,13 +44,19 @@ class AIScientist:
                 raise FileNotFoundError(f"Model file not found: {MODEL_PATH.name}")
             os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
             import keras  # noqa: WPS433 (lazy: heavy import)
+            import tensorflow as tf  # noqa: WPS433
+
+            # Small containers: cap TensorFlow's thread pools (each thread reserves stack memory).
+            if TF_THREADS > 0:
+                tf.config.threading.set_intra_op_parallelism_threads(TF_THREADS)
+                tf.config.threading.set_inter_op_parallelism_threads(1)
 
             self.model = keras.models.load_model(MODEL_PATH, compile=False)
             shape = tuple(self.model.input_shape)
             if shape[1:] != (SIGNAL_LENGTH, 1):
                 raise ValueError(f"Unexpected model input shape {shape}")
             # warm-up so first player request is fast
-            self.model.predict(np.zeros((1, SIGNAL_LENGTH, 1), np.float32), verbose=0)
+            self._score(np.zeros((1, SIGNAL_LENGTH, 1), np.float32))
             log.info("AI Scientist model loaded: %s", self.config.get("model_name"))
         except Exception as exc:  # noqa: BLE001
             self.model = None
@@ -67,6 +73,11 @@ class AIScientist:
         x = np.clip(x / scale, -CLIP_LIMIT, CLIP_LIMIT)
         return x.reshape(1, SIGNAL_LENGTH, 1)
 
+    def _score(self, x: np.ndarray) -> float:
+        """Single-sample inference. Calling the model directly (inference mode) avoids the
+        per-call tf.data pipeline that Model.predict() builds, which is slow for batch size 1."""
+        return float(np.asarray(self.model(x, training=False)).reshape(-1)[0])
+
     def predict_batch(self, X: np.ndarray) -> np.ndarray:
         if not self.ready:
             raise RuntimeError(self.error or "Model not loaded")
@@ -78,7 +89,7 @@ class AIScientist:
         if not self.ready:
             raise RuntimeError(self.error or "Model not loaded")
         x = self.preprocess(signal)
-        score = float(self.model.predict(x, verbose=0).reshape(-1)[0])
+        score = self._score(x)
         threshold = float(self.config.get("threshold", 0.5))
         is_cand = score >= threshold
         label = self.config.get("label_1", "CANDIDATE") if is_cand else self.config.get("label_0", "FALSE POSITIVE")
