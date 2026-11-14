@@ -81,6 +81,7 @@ Details: **[docs/model_integration.md](docs/model_integration.md)**.
 ```bat
 git clone https://github.com/<your-account>/ai-commander-nasa.git
 cd ai-commander-nasa
+:: keep the folder path short; TensorFlow needs paths under 260 characters on Windows
 setup.bat
 ```
 `setup.bat` does four things:
@@ -129,6 +130,7 @@ npm run dev
 | `WinError 10013` (with `--reload`) / `WinError 10048` | Port already in use, often by an old backend or an orphaned `--reload` worker; sometimes a Windows reserved port | Run `stop-backend.bat`, or use `start-backend.bat`, which moves to the next free port |
 | `No module named tensorflow` | Wrong Python | Use `backend\.venv\Scripts\python` (Python 3.12) |
 | "Mission server offline" banner | Backend not running, or its port changed after Vite started | Start the backend first, then restart `start-frontend.bat` |
+| `pip install` fails with `OSError: [Errno 2] No such file or directory` and a *Long Path* hint | TensorFlow's files exceed Windows' 260-character path limit when the project sits in a deeply nested folder | Clone to a short path (e.g. `C:\dev\ai-commander-nasa` or `Desktop\PROJECTS\...`), or [enable Windows long paths](https://learn.microsoft.com/windows/win32/fileio/maximum-file-path-limitation#enable-long-paths-in-windows-10-version-1607-and-later) |
 | `verify_assets.py` reports MISSING or MISMATCH | Incomplete download (e.g. a partial ZIP) | Re-clone the repository |
 
 ### Configuration
