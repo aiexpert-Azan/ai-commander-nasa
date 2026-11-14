@@ -1,0 +1,9 @@
+# Normalize text files to LF in the repo; keep Windows scripts as CRLF on checkout.
+* text=auto
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Trained model and processed Kepler data: binary, never diff/merge.
+*.keras binary
+*.npz binary
+*.h5 binary

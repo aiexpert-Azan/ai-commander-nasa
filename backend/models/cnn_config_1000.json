@@ -1,0 +1,13 @@
+{
+  "model_name": "kepler_cnn_1000",
+  "input_length": 128,
+  "scale": 77.26880645751953,
+  "threshold": 0.39999999999999997,
+  "label_0": "FALSE POSITIVE",
+  "label_1": "CANDIDATE",
+  "preprocessing": "phase-folded local transit window",
+  "input_units": "flux deviation in parts per thousand",
+  "training_examples": 700,
+  "validation_examples": 150,
+  "test_examples": 150
+}

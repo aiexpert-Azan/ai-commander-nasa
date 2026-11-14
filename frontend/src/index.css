@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Orbitron", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-space-950: #03050d;
+  --color-space-900: #070b1a;
+  --color-space-800: #0c1328;
+  --color-space-700: #142042;
+  --color-space-600: #1e2f5c;
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 20% 0%, #0d1838 0%, #03050d 55%) fixed, #03050d;
+  color: #e2e8f0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(20, 32, 66, 0.55), rgba(7, 11, 26, 0.7));
+  border: 1px solid rgba(103, 232, 249, 0.14);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 10px 40px -10px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+  backdrop-filter: blur(10px);
+}
+.glow-text { text-shadow: 0 0 18px rgba(34, 211, 238, 0.55); }
+.hud-label { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: #7dd3fc; opacity: 0.8; }
+
+@keyframes twinkle { 0%, 100% { opacity: 0.25 } 50% { opacity: 1 } }
+@keyframes drift { from { transform: translateY(0) } to { transform: translateY(-50%) } }
+@keyframes pulse-ring { 0% { transform: scale(0.6); opacity: 0.9 } 100% { transform: scale(2.2); opacity: 0 } }
+@keyframes scanline { from { transform: translateY(-100%) } to { transform: translateY(100%) } }
+.animate-pulse-ring { animation: pulse-ring 1.8s ease-out infinite; }
+
+.recharts-brush-texts { fill: #94a3b8; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #1e2f5c; border-radius: 4px; }
