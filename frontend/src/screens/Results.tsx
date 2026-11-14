@@ -3,7 +3,7 @@ import { Award, ChevronRight, RefreshCw, Share2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import { sfx } from '../audio/sound'
-import { Button, ErrorBox, MissionProgress, Panel, ScreenWrap, Spinner, StepTitle } from '../components/ui'
+import { Button, ErrorBox, Hint, MissionProgress, Panel, ScreenWrap, Spinner, StepTitle } from '../components/ui'
 import { missionStatus, useGame } from '../game/store'
 
 const rankColor: Record<string, string> = {
@@ -55,58 +55,37 @@ export function Results() {
   return (
     <ScreenWrap>
       <MissionProgress current="results" />
-      <StepTitle step="Mission report" title={score.success ? 'Mission success!' : 'Mission complete, but not a win yet'}
-        hint={score.success
-          ? (state.level < maxLevel ? 'Outstanding work, Commander. The next level is unlocked!' : 'Outstanding work, Commander. You beat the final level!')
-          : `To win you need at least ${Math.round((state.catalog?.levels[String(state.level)]?.pass_accuracy ?? 0.6) * 100)}% correct calls on ${status.required} stars. You got ${Math.round(score.accuracy * 100)}% on ${score.analyzed}. Try again!`} />
-      <div className="grid gap-5 md:grid-cols-[280px_1fr] [&>*]:min-w-0">
-        <Panel className="flex flex-col items-center p-6 text-center">
-          <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 120 }}
-            className={`flex h-24 w-24 items-center justify-center sm:h-32 sm:w-32 rounded-full bg-gradient-to-br ${rankColor[score.rank]} shadow-[0_0_50px_-10px_rgba(34,211,238,0.8)]`}>
-            <Award className="h-12 w-12 text-slate-950 sm:h-16 sm:w-16" />
-          </motion.div>
-          <div className="mt-4 font-display text-xl font-black text-white">{score.rank}</div>
-          <div className="mt-1 font-display text-5xl font-black text-cyan-300 glow-text">{score.total}</div>
-          <div className="text-xs text-slate-400">overall mission score / 100</div>
-        </Panel>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              ['Stars analyzed', score.analyzed],
-              ['Correct', score.correct],
-              ['Incorrect', score.incorrect],
-              ['Points', state.points],
-              ['Accuracy', `${Math.round(score.accuracy * 100)}%`],
-              ['Budget left', `$${score.budget_remaining}M`],
-              ['Energy left', `${state.live?.energy ?? 0}/${state.ops?.energy ?? 0}`],
-              ['Launch anomalies', state.launch?.anomalies.length ?? 0],
-            ].map(([l, v]) => (
-              <Panel key={String(l)} className="p-3">
-                <div className="font-display text-xl font-bold text-white">{v}</div>
-                <div className="text-[11px] text-slate-400">{l}</div>
-              </Panel>
-            ))}
-          </div>
-          <Panel className="p-5">
-            <div className="hud-label mb-3">Score breakdown</div>
-            <div className="space-y-3">
-              {parts.map((p) => (
-                <div key={p.k}>
-                  <div className="mb-1 flex items-end justify-between gap-2 text-sm"><span className="text-slate-200">{p.label} <span className="block text-[11px] text-slate-400">{p.hint}</span></span><span className="shrink-0 font-display font-bold text-white tabular-nums">{score.breakdown[p.k]} / {p.max}</span></div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-800"><motion.div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500" initial={{ width: 0 }} animate={{ width: `${(score.breakdown[p.k] / p.max) * 100}%` }} transition={{ duration: 1 }} /></div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-          <Panel className="p-5">
-            <div className="hud-label mb-2">What made the difference</div>
-            <ul className="list-inside list-disc space-y-1 text-sm text-slate-300">
-              {score.insights.map((t) => <li key={t}>{t}</li>)}
-              {state.launch?.anomalies.map((a) => <li key={a.id}>Launch anomaly: {a.title} — {a.detail}</li>)}
-            </ul>
-          </Panel>
+      <StepTitle step="Mission report" title={score.success ? 'Mission success!' : 'Not a win yet'}
+        hint={score.success ? (state.level < maxLevel ? 'Next level unlocked!' : 'You beat the final level!') : `Need ${Math.round((state.catalog?.levels[String(state.level)]?.pass_accuracy ?? 0.6) * 100)}% correct. Try again!`} />
+      <Panel className="flex flex-col items-center p-5 text-center">
+        <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 120 }}
+          className={`flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br ${rankColor[score.rank]} shadow-[0_0_50px_-10px_rgba(34,211,238,0.8)]`}>
+          <Award className="h-10 w-10 text-slate-950" />
+        </motion.div>
+        <div className="mt-3 font-display text-5xl font-black text-cyan-300 glow-text">{score.total}<span className="text-xl text-slate-400">/100</span></div>
+        <div className="mt-1 font-display text-lg font-bold text-white">{score.rank}</div>
+        <div className="mt-4 grid w-full max-w-md grid-cols-3 gap-2">
+          {([['Stars checked', score.analyzed], ['Correct', `${score.correct} (${Math.round(score.accuracy * 100)}%)`], ['Points', state.points]] as const).map(([l, v]) => (
+            <div key={l} className="rounded-xl bg-space-900/70 p-2"><div className="font-display text-lg font-bold text-white">{v}</div><div className="text-xs text-slate-300">{l}</div></div>
+          ))}
         </div>
+      </Panel>
+      <div className="mt-3">
+        <Hint title="Score details">
+          <div className="space-y-2">
+            {parts.map((p) => (
+              <div key={p.k}>
+                <div className="flex justify-between gap-2"><span>{p.label} <span className="text-xs text-slate-400">({p.hint})</span></span><b className="tabular-nums text-white">{score.breakdown[p.k]}/{p.max}</b></div>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-800"><div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500" style={{ width: `${(score.breakdown[p.k] / p.max) * 100}%` }} /></div>
+              </div>
+            ))}
+            <p className="pt-1 text-xs text-slate-400">Budget left ${score.budget_remaining}M · Energy left {state.live?.energy ?? 0}/{state.ops?.energy ?? 0} · Launch problems {state.launch?.anomalies.length ?? 0}</p>
+            <ul className="list-inside list-disc space-y-1 text-xs text-slate-300">
+              {score.insights.map((t) => <li key={t}>{t}</li>)}
+              {state.launch?.anomalies.map((a) => <li key={a.id}>Launch problem: {a.title}. {a.detail}</li>)}
+            </ul>
+          </div>
+        </Hint>
       </div>
 
       <div className="mt-6 flex flex-col-reverse justify-end gap-3 sm:flex-row">

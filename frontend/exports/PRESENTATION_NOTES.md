@@ -36,32 +36,19 @@
 - **QR code**: lets judges play on their own phones.
 
 **Suggested demo script (about 3 minutes):**
-1. START MY MISSION, then choose Guided Explorer and skip the tutorial.
-2. Auto-Build, then show the live meters.
+1. START MY MISSION, then choose Guided Explorer, skip the tutorial and tap Continue.
+2. Tap **Auto-Build (Recommended)** at the top of the Build screen, then show the Budget, Weight, Power and Risk bar.
 3. Check: point out the plain-language readiness checks, then Launch and press Skip.
 4. Tap a star, then Point Telescope. Show the real Kepler graph and the "dip window".
-5. Ask the AI Scientist: "AI Suggests…". Open "How did the AI decide?" to show that the score is not a probability.
+5. Ask the AI Scientist: "AI Suggests…". Open **Details** to show that the score is not a probability.
 6. Make the call and show the feedback, which is checked on the server against the Kepler DR25 catalog.
 
-## Iframe restriction and the one-time deployment step (important)
+## Live embed and headers
 
-The deployed site currently sends `X-Frame-Options: DENY`, which **blocks every iframe**. We confirmed this in a real browser. Until it is changed:
-
-- the phone shows a clearly labelled **real screenshot** with an *Open live game* button;
-- the status pill says the live embed is blocked.
-
-The presentation never pretends a screenshot is the live game.
-
-**Fix, already made in the repository but not deployed:**
-- `frontend/vercel.json` adds `Content-Security-Policy: frame-ancestors 'self' file:`. This lets **only the game's own site and locally opened files** (this presentation) embed the game. Every other website is still blocked. `X-Frame-Options: DENY` is kept for older browsers, and modern browsers follow the CSP rule.
-- `frontend/src/main.tsx`: when the game is embedded, it sends one "ready" message (`{type: 'ai-commander-ready'}`) to the page that embeds it. This is how the presentation knows the live embed really works, so it never shows "LIVE" by mistake. No game data is sent and the game logic is unchanged.
-
-**To enable the live embed:** commit these two changes and redeploy the frontend on Vercel. No backend or Railway change is needed. Then open the HTML file and check that slide 7 shows the green **LIVE** pill.
-
-Notes:
-- We tested this exact header policy with a local copy of the site. Clicking, scrolling, Auto-Build through the real API, keyboard isolation, Fullscreen demo and Open live game all worked at 1920 × 1080 and 1366 × 768. It cannot be proven on the live URL until it is deployed.
-- `file:` framing is tested in Chromium (Chrome/Edge). If another browser blocks it, use **Open live game**.
-- If the venue network blocks the site, use the QR code on a phone hotspot.
+- Online version: https://ai-commander-nasa.vercel.app/presentation.html (same file, served by Vercel next to the game).
+- Production headers in `frontend/vercel.json`: `Content-Security-Policy: frame-ancestors 'self' file:` and `X-Frame-Options: SAMEORIGIN`. Only the game's own site and a locally opened copy of this file can embed the game; every other website is blocked.
+- When embedded, the game sends one "ready" message to the page around it, so the phone shows **LIVE** only when the real game is running. If embedding is ever blocked, the phone shows a labelled screenshot and **Open live game** still works.
+- Embedding from a local file is tested in Chrome and Edge. If another browser blocks it, use the online URL above or **Open live game**.
 
 ## Slide-by-slide speaking notes
 
@@ -71,10 +58,7 @@ The same notes are also inside the PPTX as speaker notes.
 
 **2 · Mission design is hard to learn from a textbook.** Mission design is usually taught as facts to memorise. Real mission teams make linked decisions under budget, mass, power and risk limits, and then do science with messy real data. Beginners almost never get to experience those decisions.
 
-**3 · Play the whole mission, from design to discovery.**
-- The game walks players through the full mission: build, readiness review, launch, observe real Kepler stars, analyse each signal, mission score.
-- Guided Explorer adds hints and Auto-Build. Mission Commander is independent play.
-- Both use exactly the same rules and scoring.
+**3 · One Mission. Six Critical Decisions.** One mission becomes six decisions: design a spacecraft on a budget, validate it in a safety review, survive a risk-based launch, explore real Kepler stars, analyse each signal (planet or false positive?), and complete the mission with a score out of 100. Guided Explorer adds Auto-Build; Mission Commander is independent play, on the same rules. The real game is revealed live on the final slide.
 
 **4 · Every choice is a real engineering trade-off.**
 - Seven design choices; each one changes cost, mass, power, data, risk and lifetime together.

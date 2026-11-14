@@ -89,25 +89,16 @@ export function MissionProgress({ current }: { current: Screen }) {
 /**
  * Contextual lesson. Guided Explorer sees it as an open hint; Mission Commander gets a collapsed "Learn more".
  */
-export function Hint({ children, title = 'Why it matters', forceOpen }: { children: ReactNode; title?: string; forceOpen?: boolean }) {
-  const { state } = useGame()
-  const guided = state.mode !== 'commander'
+/** Progressive disclosure: a small "Why?" toggle that reveals a short explanation on demand. */
+export function Hint({ children, title = 'Why?' }: { children: ReactNode; title?: string }) {
   const [open, setOpen] = useState(false)
-  if (guided || forceOpen) {
-    return (
-      <div className="flex items-start gap-2 rounded-xl border border-cyan-300/20 bg-cyan-400/5 p-3 text-sm text-cyan-50/90">
-        <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" aria-hidden />
-        <div><span className="font-semibold text-amber-200">{title}: </span>{children}</div>
-      </div>
-    )
-  }
   return (
     <div className="text-sm">
       <button onClick={() => setOpen((o) => !o)} aria-expanded={open}
-        className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 text-cyan-300 hover:text-cyan-100">
-        <Lightbulb className="h-4 w-4" aria-hidden /> Learn more <ChevronDown className={`h-4 w-4 transition ${open ? 'rotate-180' : ''}`} aria-hidden />
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 font-semibold text-cyan-300 hover:text-cyan-100">
+        <Lightbulb className="h-4 w-4 text-amber-300" aria-hidden /> {title} <ChevronDown className={`h-4 w-4 transition ${open ? 'rotate-180' : ''}`} aria-hidden />
       </button>
-      {open && <p className="mt-1 rounded-xl bg-space-900/60 p-3 text-slate-300">{children}</p>}
+      {open && <div className="mt-1 rounded-xl bg-space-900/70 p-3 leading-relaxed text-slate-200">{children}</div>}
     </div>
   )
 }

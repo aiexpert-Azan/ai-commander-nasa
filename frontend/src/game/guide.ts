@@ -8,31 +8,31 @@ export const SLOT_ORDER: DesignSlot[] = ['telescope', 'instrument', 'solar', 'an
 /** One simple sentence per part: what it does and the trade-off. */
 export const slotInfo: Record<DesignSlot, { label: string; purpose: string; tradeoff: string }> = {
   telescope: {
-    label: 'Telescope', purpose: 'Collects starlight. A bigger mirror makes every discovery worth more points.',
+    label: 'Telescope', purpose: 'Detects light from distant stars.',
     tradeoff: 'Bigger telescopes are heavier, cost more and need more power.',
   },
   instrument: {
-    label: 'Camera', purpose: 'The light sensor. It decides how many stars you can choose from.',
+    label: 'Camera', purpose: 'Measures star brightness.',
     tradeoff: 'More stars means more data that must be sent back to Earth.',
   },
   solar: {
-    label: 'Solar Panels', purpose: 'Make electricity. Spare power becomes energy for observations.',
+    label: 'Solar Panels', purpose: 'Powers your spacecraft.',
     tradeoff: 'Bigger panels add weight and are riskier to unfold in space.',
   },
   antenna: {
-    label: 'Antenna', purpose: 'Sends your science data home. Stronger links give extra AI credits.',
+    label: 'Antenna', purpose: 'Sends data home to Earth.',
     tradeoff: 'Powerful antennas use more electricity.',
   },
   launch: {
-    label: 'Rocket', purpose: 'Carries your spacecraft into space. It must be strong enough for your orbit.',
+    label: 'Rocket', purpose: 'Carries you into space.',
     tradeoff: 'Bigger rockets lift more and fail less often, but cost a lot.',
   },
   orbit: {
-    label: 'Orbit', purpose: 'Where your spacecraft lives. Sets how long it works and how well it sees stars.',
+    label: 'Orbit', purpose: 'Where your spacecraft flies.',
     tradeoff: 'Far orbits see better but need the Deep Space network to talk to Earth.',
   },
   ground_station: {
-    label: 'Ground Station', purpose: 'The dishes on Earth that listen to your spacecraft.',
+    label: 'Ground Station', purpose: 'Dishes on Earth that listen.',
     tradeoff: 'Far-away orbits need the bigger Deep Space network.',
   },
 }
@@ -66,33 +66,27 @@ export interface CheckGuide {
 }
 
 const checkGuides: Record<string, Omit<CheckGuide, 'target'> & { target: DesignSlot | null }> = {
-  complete: { problem: 'Your spacecraft is missing some parts.', why: 'A spacecraft needs every system to work.', fix: 'Pick one option in every category.', target: null, fixLabel: 'Pick missing part' },
-  budget: { problem: 'Your spacecraft costs more than your budget.', why: 'Real missions have a fixed budget. Going over means no launch.', fix: 'Choose a smaller telescope, a simpler camera or a cheaper rocket.', target: 'telescope', fixLabel: 'Change telescope' },
-  launch: { problem: 'Your rocket cannot carry your spacecraft to its orbit.', why: 'Every kilogram must be lifted. Far orbits need more rocket power.', fix: 'Choose a bigger rocket, a closer orbit or lighter parts.', target: 'launch', fixLabel: 'Change rocket' },
-  power: { problem: 'Your spacecraft does not make enough electricity.', why: 'Power must be greater than what your equipment uses, or it shuts down.', fix: 'Choose bigger solar panels or less power-hungry parts.', target: 'solar', fixLabel: 'Change solar panels' },
-  comms: { problem: 'Your spacecraft cannot send all its science data back to Earth.', why: 'Data that never reaches Earth cannot be studied.', fix: 'Choose a stronger antenna or the Deep Space Antenna Network.', target: 'antenna', fixLabel: 'Change antenna' },
-  ground: { problem: 'Your ground station cannot hear a spacecraft that far away.', why: 'Distant orbits need giant dishes to receive faint signals.', fix: 'Select the Deep Space Antenna Network.', target: 'ground_station', fixLabel: 'Change ground station' },
-  lifetime: { problem: 'Your mission would not last long enough to finish its science.', why: 'You need enough observing days to study all your stars.', fix: 'Pick a stable orbit (L2 or Earth-Trailing) and keep spare power.', target: 'orbit', fixLabel: 'Change orbit' },
-  energy: { problem: 'Not enough energy for all your planned observations.', why: 'Each observation uses energy, which comes from spare solar power.', fix: 'Choose bigger solar panels or a less power-hungry camera.', target: 'solar', fixLabel: 'Change solar panels' },
-  risk: { problem: 'Your mission is too risky for this level.', why: 'Risky parts and thin margins make launch problems more likely.', fix: 'Choose a more reliable rocket, simpler parts or more spare power.', target: 'launch', fixLabel: 'Change rocket' },
+  complete: { problem: "Some parts are missing.", why: 'A spacecraft needs every system to work.', fix: 'Pick one option in every category.', target: null, fixLabel: 'Pick missing part' },
+  budget: { problem: "Over budget. Pick cheaper parts.", why: 'Real missions have a fixed budget. Going over means no launch.', fix: 'Choose a smaller telescope, a simpler camera or a cheaper rocket.', target: 'telescope', fixLabel: 'Change telescope' },
+  launch: { problem: "Rocket can't carry it. Pick a bigger rocket.", why: 'Every kilogram must be lifted. Far orbits need more rocket power.', fix: 'Choose a bigger rocket, a closer orbit or lighter parts.', target: 'launch', fixLabel: 'Change rocket' },
+  power: { problem: "Not enough power. Upgrade solar panels.", why: 'Power must be greater than what your equipment uses, or it shuts down.', fix: 'Choose bigger solar panels or less power-hungry parts.', target: 'solar', fixLabel: 'Change solar panels' },
+  comms: { problem: "Data can't reach Earth. Upgrade the antenna.", why: 'Data that never reaches Earth cannot be studied.', fix: 'Choose a stronger antenna or the Deep Space Antenna Network.', target: 'antenna', fixLabel: 'Change antenna' },
+  ground: { problem: "Earth can't hear you. Pick Deep Space Network.", why: 'Distant orbits need giant dishes to receive faint signals.', fix: 'Select the Deep Space Antenna Network.', target: 'ground_station', fixLabel: 'Change ground station' },
+  lifetime: { problem: "Mission too short. Pick a stable orbit.", why: 'You need enough observing days to study all your stars.', fix: 'Pick a stable orbit (L2 or Earth-Trailing) and keep spare power.', target: 'orbit', fixLabel: 'Change orbit' },
+  energy: { problem: "Not enough energy. Bigger solar panels.", why: 'Each observation uses energy, which comes from spare solar power.', fix: 'Choose bigger solar panels or a less power-hungry camera.', target: 'solar', fixLabel: 'Change solar panels' },
+  risk: { problem: "Too risky. Pick a more reliable rocket.", why: 'Risky parts and thin margins make launch problems more likely.', fix: 'Choose a more reliable rocket, simpler parts or more spare power.', target: 'launch', fixLabel: 'Change rocket' },
 }
 
 const passText: Record<string, string> = {
-  budget: 'Your spacecraft fits the budget.',
-  launch: 'Your rocket can carry your spacecraft to orbit.',
-  power: 'You make more electricity than you use.',
-  comms: 'All your science data can reach Earth.',
-  ground: 'Your ground station can talk to your spacecraft.',
-  lifetime: 'Your mission will last long enough.',
-  energy: 'You have enough energy for your observations.',
-  risk: 'Mission risk is acceptable.',
+  budget: 'Budget', launch: 'Rocket', power: 'Power', comms: 'Data link', ground: 'Ground station',
+  lifetime: 'Lifetime', energy: 'Energy', risk: 'Risk',
 }
 
 const warnText: Record<string, string> = {
-  launch: 'Your rocket can lift it, but only just.',
-  power: 'Power is OK, but the margin is thin.',
-  comms: 'Data only just fits through your link.',
-  risk: 'Mission risk is on the high side.',
+  launch: 'Rocket: OK, but nearly full.',
+  power: 'Power: OK, but tight.',
+  comms: 'Data link: OK, but tight.',
+  risk: 'Risk: OK, but high.',
 }
 
 export function guideForCheck(c: Check, design: Design): CheckGuide & { headline: string } {

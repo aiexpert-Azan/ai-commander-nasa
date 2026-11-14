@@ -6,20 +6,20 @@ import type { AIResult } from '../api/client'
 const plain: Record<AIResult['predicted_class'], { headline: string; body: string; tone: string }> = {
   CANDIDATE: {
     headline: 'Possible Planet',
-    body: 'The dip in this graph looks similar to signals the AI learned were planet candidates.',
+    body: 'This dip looks like known planet signals.',
     tone: 'text-emerald-300',
   },
   'FALSE POSITIVE': {
     headline: 'Likely False Positive',
-    body: 'The dip looks more like the fakes the AI learned about, such as two stars eclipsing each other or instrument noise.',
+    body: 'This looks like a fake: eclipsing stars or noise.',
     tone: 'text-rose-300',
   },
 }
 
 const confidence: Record<string, string> = {
-  strong: 'It is fairly sure.',
-  moderate: 'It is somewhat sure.',
-  weak: 'It is very unsure. This is close to a coin-flip.',
+  strong: 'Fairly sure.',
+  moderate: 'Somewhat sure.',
+  weak: 'Very unsure.',
 }
 
 export function AIScientistCard({ result }: { result: AIResult }) {
@@ -33,11 +33,11 @@ export function AIScientistCard({ result }: { result: AIResult }) {
         <span className={`font-display text-lg font-black ${p.tone}`}>{p.headline}</span>
       </div>
       <p className="mt-1 text-sm text-slate-200">{p.body} {confidence[result.lean_strength] ?? ''}</p>
-      <p className="mt-2 text-sm font-semibold text-amber-200">The AI can be wrong. It has not confirmed a planet. You make the final call.</p>
+      <p className="mt-1.5 text-sm font-semibold text-amber-200">AI can be wrong. You decide.</p>
 
       <button onClick={() => setOpen((o) => !o)} aria-expanded={open}
         className="mt-2 flex min-h-11 items-center gap-1.5 text-sm font-semibold text-violet-200 hover:text-white">
-        <Bot className="h-4 w-4" /> How did the AI decide? <ChevronDown className={`h-4 w-4 transition ${open ? 'rotate-180' : ''}`} />
+        <Bot className="h-4 w-4" /> Details <ChevronDown className={`h-4 w-4 transition ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="mt-1 space-y-3 rounded-xl bg-space-950/60 p-3 text-xs text-slate-300">

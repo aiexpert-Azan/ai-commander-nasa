@@ -84,7 +84,7 @@ export function LaunchScreen() {
   return (
     <ScreenWrap>
       <MissionProgress current="launch" />
-      <StepTitle step="Launch" title="Launch sequence" hint="Sit back, Commander. Riskier designs are more likely to hit problems on the way up." />
+      <StepTitle step="Launch" title="Launch sequence" hint="Riskier designs can hit problems." />
       {error && <ErrorBox message={error} onRetry={run} />}
 
       <div className="grid gap-5 md:grid-cols-[1fr_320px] [&>*]:min-w-0">
